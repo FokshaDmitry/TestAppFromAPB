@@ -39,7 +39,7 @@
             label3 = new Label();
             label4 = new Label();
             CurrentPath = new TextBox();
-            button1 = new Button();
+            PlusFile = new Button();
             SuspendLayout();
             // 
             // FilePreviwText
@@ -149,14 +149,15 @@
             CurrentPath.Size = new Size(205, 23);
             CurrentPath.TabIndex = 12;
             // 
-            // button1
+            // PlusFile
             // 
-            button1.Location = new Point(154, 296);
-            button1.Name = "button1";
-            button1.Size = new Size(75, 23);
-            button1.TabIndex = 13;
-            button1.Text = "Plus File";
-            button1.UseVisualStyleBackColor = true;
+            PlusFile.Location = new Point(154, 296);
+            PlusFile.Name = "PlusFile";
+            PlusFile.Size = new Size(75, 23);
+            PlusFile.TabIndex = 13;
+            PlusFile.Text = "Plus File";
+            PlusFile.UseVisualStyleBackColor = true;
+            PlusFile.Click += PlusFile_Click;
             // 
             // FormAPB
             // 
@@ -164,7 +165,7 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
-            Controls.Add(button1);
+            Controls.Add(PlusFile);
             Controls.Add(CurrentPath);
             Controls.Add(label4);
             Controls.Add(label3);
@@ -195,6 +196,6 @@
         private Label label3;
         private Label label4;
         private TextBox CurrentPath;
-        private Button button1;
+        private Button PlusFile;
     }
 }
