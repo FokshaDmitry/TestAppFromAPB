@@ -2,6 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 using TestAppFromAPB.Enums;
 using TestAppFromAPB.Interfaces;
 using TestAppFromAPB.Models;
@@ -20,51 +24,93 @@ namespace TestAppFromAPB.ViewModels
             filePicker = new FilePickerService();
             logger = new LoggerService();
         }
-        public async Task<string> ParceFile(string Path, FilterMethod filter)
+        public async Task<string> ChangeFilter(FilterMethod filter)
         {
-            // Parce файла с использованием LINQ и отложеным выполнением
-            fileModels = File.ReadAllLines(Path).Select(line => line.Split(';')).Select(parts => new APBFileModel{ id = int.Parse(parts[0]), Age = int.Parse(parts[1]), Name = parts[2]}).ToList();
             if (fileModels.Count != 0)
             {
-                //Создаём словарь для фильтрации по группам
-                Dictionary<string, List<string>> filterByGroup = new Dictionary<string, List<string>>();
-
+                Dictionary<string, List<string>> dictionary = new Dictionary<string, List<string>>();
                 switch (filter)
                 {
                     case FilterMethod.Age:
-                        filterByGroup = fileModels.GroupBy(u => u.Age.ToString()).OrderBy(g => int.Parse(g.Key)).ToDictionary(g => g.Key, g => g.Select(u => u.Age + ", " + u.Name).ToList())!;
+                        dictionary = (from u in fileModels
+                                      group u by u.Age.ToString() into g
+                                      orderby int.Parse(g.Key)
+                                      select g).ToDictionary(g => g.Key, g => g.Select(u => u.Age + ", " + u.Name).ToList());
                         break;
-
                     case FilterMethod.Name:
-                        filterByGroup = fileModels.Where(u => !string.IsNullOrEmpty(u.Name)).GroupBy(u => u.Name![0].ToString().ToUpper()).OrderBy(g => g.Key).ToDictionary(g => g.Key, g => g.Select(u => u.Age + ", " + u.Name).ToList())!;
+                        dictionary = (from u in fileModels
+                                      where !string.IsNullOrEmpty(u.Name)
+                                      group u by u.Name[0].ToString().ToUpper() into g
+                                      orderby g.Key
+                                      select g).ToDictionary(g => g.Key, g => g.Select(u => u.Age + ", " + u.Name).ToList());
                         break;
                 }
-                // Используем StringBuilder, чтобы не перегружать память и сборщик мусора
+
                 StringBuilder stringBuilder = new StringBuilder();
-                int currentIndentCount = 0;
+                int indentCount = 0;
                 int step = 6;
-
-                foreach (var group in filterByGroup)
+                foreach (KeyValuePair<string, List<string>> item in dictionary)
                 {
-                    int spacesToAppend = currentIndentCount * step;
-
-                    foreach (var data in group.Value)
+                    int spaces = indentCount * step;
+                    foreach (string line in item.Value)
                     {
-                        if (spacesToAppend > 0)
-                        {
-                            stringBuilder.Append(' ', spacesToAppend);
-                        }
+                        if (spaces > 0) stringBuilder.Append(' ', spaces);
                         stringBuilder.Append("| ");
-                        stringBuilder.AppendLine(data);
+                        stringBuilder.AppendLine(line);
                     }
-                    currentIndentCount++;
+                    indentCount++;
                 }
                 return stringBuilder.ToString();
             }
+            return "File is empty";
+        }
+
+        public async Task<string> ParceFile(string Path, FilterMethod filter, bool addFile = false)
+        {
+            if (addFile)
+            {
+                if (fileModels.Count() != 0)
+                {
+                    List<APBFileModel> collection;
+                    try
+                    {
+                        collection = (from line in File.ReadAllLines(Path)
+                                      select line.Split(';') into parts
+                                      select new APBFileModel
+                                      {
+                                          id = int.Parse(parts[0]),
+                                          Age = int.Parse(parts[1]),
+                                          Name = parts[2]
+                                      }).ToList();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error parsing file: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                        return "Error parsing file: " + ex.Message;
+                    }
+                    fileModels.AddRange(collection);
+                }
+            }
             else
             {
-                return "File is empty";
+                try
+                {
+                    fileModels = (from line in File.ReadAllLines(Path)
+                                  select line.Split(';') into parts
+                                  select new APBFileModel
+                                  {
+                                      id = int.Parse(parts[0]),
+                                      Age = int.Parse(parts[1]),
+                                      Name = parts[2]
+                                  }).ToList();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error parsing file: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                    return "Error parsing file: " + ex.Message;
+                }
             }
+            return await ChangeFilter(filter);
         }
         
     }
