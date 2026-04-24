@@ -1,4 +1,7 @@
-﻿namespace TestAppFromAPB
+﻿using System.Drawing;
+using System.Windows.Forms;
+
+namespace TestAppFromAPB
 {
     partial class FormAPB
     {
